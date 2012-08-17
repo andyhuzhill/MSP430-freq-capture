@@ -50,19 +50,12 @@ void ConfigADC(void)
 {
 	ADC10CTL0 = SREF_1 + ADC10SHT_2 + REFON + ADC10ON + ADC10IE + REF2_5V;
 	//转换时钟选择 ADC10ON 参考电压2.5V
-	ADC10CTL1 |=INCH_4;
+	ADC10CTL1 |= INCH_4;
 	ADC10AE0  |= BIT4;
 }
 
 void ConfigPort(void)
 {
-#ifdef  DEBUG
-	P1DIR |= BIT6;
-#endif
-	//	P1IE |= BIT5;
-	//	P1IES |= BIT5;
-	//	P1IFG &= ~BIT5;
-
 	P1DIR &= ~BIT2;
 	P1SEL |= BIT2;     //捕获引脚 CCI1A P1.2
 
@@ -72,7 +65,7 @@ void ConfigPort(void)
 
 char* ftoa(float f)  //浮点数转换为字符串
 {
-	static char str[6];
+	static char str[7];
 	long iTemp;
 
 	iTemp = (long)f;
@@ -80,8 +73,9 @@ char* ftoa(float f)  //浮点数转换为字符串
 	str[1]= iTemp / 1000 % 10 + 0x30;
 	str[2]= iTemp / 100 % 10 + 0x30;
 	str[3]= iTemp / 10 % 10 + 0x30;
-	str[4]= iTemp % 10 +0x30;
-	str[5]= '\0';
+	str[4]= '.';
+	str[5]= iTemp % 10 +0x30;
+	str[6]= '\0';
 	return str;
 }
 
@@ -113,17 +107,18 @@ main(void)
 		ADC10CTL0 |= ADC10SC + ENC;
 		_BIS_SR(LPM3_bits+GIE);
 
-		if (Period  != 0) {
+		if (Period != 0) {
 			t = Period / 200.0 / 32768;
-			freq = 1.0 / t / 2;
-			str = ftoa(freq);
+			freq = 1.0 / t / 2;              //将周期转换为频率
+
+			str = ftoa(freq*10);
 			LCD12864_write_string(4,2,str);
-			str = ftoa(Period);
 			LCD12864_write_data('H');
 			LCD12864_write_data('z');
+			Period = 0;
 		}
 
-		ADC_value[i++] = ADC10MEM;
+		ADC_value[i++] = ADC10MEM;           //记录100次ADC转换值，求幅值
 		if(i == 100){
 			i = 0;
 			ADC_max[k] = ADC_value[0];
@@ -131,7 +126,7 @@ main(void)
 			for(j = 0;j < 100;j ++){
 				if(ADC_max[k] < ADC_value[j])
 					ADC_max[k] = ADC_value[j];
-			}
+			}								//找出100个值中的最大值
 
 			k ++;
 			if(k == 10){
@@ -140,12 +135,10 @@ main(void)
 					temp += ADC_max[j];
 				average = (temp / 10);
 				k = 0;
+				volt =  average / 1023.0 * 2.5;
+				str = ftoa(volt*10);
+				LCD12864_write_string(4,3,str); // 计算十个最大值的平均值作为幅值，并显示
 			}
-
-			volt =  average / 1023.0 * 2.5;
-
-			str = ftoa(volt);
-			LCD12864_write_string(4,3,str);
 		}
 	}
 }
@@ -158,7 +151,7 @@ TimerA1_ISR(void)
 	switch (TAIV)
 	{
 	case 2:
-		if ((CapCnt ==0)&&(CCTL1 &CM0))
+		if ((CapCnt ==0)&&(CCTL1 &CM0))  //当上升沿时 开始计时
 			Capture = CCR1;
 		CapCnt ++;
 		if (CapCnt >= 200){
@@ -172,15 +165,12 @@ TimerA1_ISR(void)
 			TA_OverflowCnt = 0;
 			_BIC_SR_IRQ(LPM3_bits);
 		}
-#ifdef  DEBUG
-		P1OUT ^= BIT6;
-#endif
 		TACCTL0 &= ~CCIFG;
 		break;
 	case 10:
 		if (Capture != 0) {
 			TA_OverflowCnt ++;
-		}     //如果没有捕获，则不计时
+		}     //如果没有开始捕获，则不计时
 		TACTL &= ~TAIFG;
 		break;
 	default:

@@ -138,6 +138,7 @@ main(void)
 				volt =  average / 1023.0 * 2.5;
 				str = ftoa(volt*10);
 				LCD12864_write_string(4,3,str); // 计算十个最大值的平均值作为幅值，并显示
+				LCD12864_write_data('V');
 			}
 		}
 	}

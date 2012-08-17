@@ -23,9 +23,6 @@ uint Capture = 0;
 uint CapCnt=0;
 uint TA_OverflowCnt=0;
 unsigned long Period=0;
-float t,freq;
-
-uint i,j,k;
 
 void ConfigClocks(void)
 {
@@ -80,6 +77,8 @@ void
 main(void)
 {
 	char *str;
+	uint i,j,k;
+	float t,freq;
 
 	uint ADC_value[100];
 	uint ADC_max[10];
@@ -96,7 +95,7 @@ main(void)
 
 	LCD12864_init();
 	LCD12864_clr();
-	LCD12864_write_string(0,1,"  频  率  计");
+	LCD12864_write_string(0,1,"    频  率  计");
 	LCD12864_write_string(0,2,"频率值:");
 	LCD12864_write_string(0,3,"幅值:");
 	while(1)
@@ -161,9 +160,9 @@ TimerA1_ISR(void)
 			CapCnt = 0;
 			Capture = 0;
 			TA_OverflowCnt = 0;
-			_BIC_SR_IRQ(LPM3_bits);
 		}
 		TACCTL0 &= ~CCIFG;
+		_BIC_SR_IRQ(LPM3_bits);
 		break;
 	case 10:
 		if (Capture != 0) {

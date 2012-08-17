@@ -17,32 +17,32 @@
 #include <msp430g2553.h>
 #include "lcd12864.h"
 
-#define DEBUG
+//#define DEBUG
 
 typedef unsigned int uint;
-typedef unsigned char uchar;
+//typedef unsigned char uchar;
 
 uint Capture = 0;
-uchar CapCnt=0;
-uchar TA_OverflowCnt=0;
-uint Period=0;
+uint CapCnt=0;
+uint TA_OverflowCnt=0;
+unsigned long Period=0;
 float t,freq;
 
-uchar i,j,k;
+uint i,j,k;
 
 void ConfigClocks(void)
 {
-	BCSCTL1 = CALBC1_8MHZ;
-	DCOCTL = CALDCO_8MHZ;
-	BCSCTL3 |= LFXT1S_0;                  //LFXT1 = VLO
+	BCSCTL1 = CALBC1_1MHZ;
+	DCOCTL = CALDCO_1MHZ;
+	BCSCTL3 |= LFXT1S_0;                  //ACLK = LFXT1 = 32768Hz
 	IFG1 &= ~OFIFG;
 	BCSCTL2 |= SELM_0 + DIVM_0 + DIVS_0;  //MCLK =DCO SMCLK = DCO
 }
 
 void ConfigTimer(void)
 {
-	CCTL1 = CCIE + CM_1 + SCS + CAP;     //上升沿捕获、选择CCI1A (P1.2) 同步捕获
-	TACTL = TASSEL_1 + MC_2 + TAIE + TACLR + ID_0;
+	CCTL1 = CCIE + CM_3 + SCS + CAP;     //上升沿捕获、选择CCI1A (P1.2) 同步捕获
+	TACTL = TASSEL_1 + MC_2  + TAIE + TACLR + ID_0;
 	//基准频率32768Hz 连续计数 无分频、定时中断允许
 }
 
@@ -73,9 +73,9 @@ void ConfigPort(void)
 char* ftoa(float f)  //浮点数转换为字符串
 {
 	static char str[6];
-	int iTemp;
+	long iTemp;
 
-	iTemp = (int)f;
+	iTemp = (long)f;
 	str[0]= iTemp / 10000 + 0x30;
 	str[1]= iTemp / 1000 % 10 + 0x30;
 	str[2]= iTemp / 100 % 10 + 0x30;
@@ -113,13 +113,14 @@ main(void)
 		ADC10CTL0 |= ADC10SC + ENC;
 		_BIS_SR(LPM3_bits+GIE);
 
-		if (Period != 0) {
-			t = Period / 100.0 / 32768.0;
-			freq = 1 / t;
+		if (Period  != 0) {
+			t = Period / 200.0 / 32768;
+			freq = 1.0 / t / 2;
 			str = ftoa(freq);
 			LCD12864_write_string(4,2,str);
 			str = ftoa(Period);
-			LCD12864_write_string(0,4,str);
+			LCD12864_write_data('H');
+			LCD12864_write_data('z');
 		}
 
 		ADC_value[i++] = ADC10MEM;
@@ -149,53 +150,6 @@ main(void)
 	}
 }
 
-//interrupt(TIMER0_A0_VECTOR)
-//Timer0_A0_ISR(void)
-//{
-//    _DINT();
-//    switch (TAIV)
-//    {
-//        case 2:
-//            if (Capture == 0)
-//                Capture = CCR0;
-//            CapCnt ++;
-//            if (CapCnt >= 100)
-//            {
-//                Period = (65535 - Capture) + TA_OverflowCnt * 65535 + CCR0;
-//                CapCnt = 0;
-//                Capture = 0;
-//                TA_OverflowCnt = 0;
-//                _BIC_SR_IRQ(LPM3_bits);
-//            }
-//            P1OUT ^= BIT6;
-//            TACCTL0 &= ~CCIFG;
-//            break;
-//        default:
-//            break;
-//    }
-//    _EINT();
-//}
-//
-//#pragma vector= PORT1_VECTOR
-//__interrupt void
-//Port1_ISR(void)
-//{
-//	_DINT();
-//	static uint i=0;
-//	if (P1IFG & BIT5) {
-//		i++;
-//	}
-//	if (i >= 100) {
-//		i=0;
-//		Period = (((unsigned long) TA_OverflowCnt << 16) + TAR);
-//		TA_OverflowCnt = 0;
-//		TACTL |= TACLR;
-//	}
-//	P1OUT ^= BIT0;
-//	P1IFG &= ~BIT5;
-//	_EINT();
-//}
-
 #pragma vector=TIMER0_A1_VECTOR
 __interrupt void
 TimerA1_ISR(void)
@@ -204,11 +158,15 @@ TimerA1_ISR(void)
 	switch (TAIV)
 	{
 	case 2:
-		if (Capture == 0)
-			Capture = TAR;
+		if ((CapCnt ==0)&&(CCTL1 &CM0))
+			Capture = CCR1;
 		CapCnt ++;
-		if (CapCnt >= 100){
-			Period = (65536 - Capture) + TA_OverflowCnt * 65536 + TAR;  // 计算100个周期所用时间
+		if (CapCnt >= 200){
+			if (TA_OverflowCnt > 0){
+				Period = (65536 - Capture) + (TA_OverflowCnt-1) * 65536 + CCR1;  // 计算100个周期所用时间
+			}else{
+				Period = CCR1 - Capture ;
+			}
 			CapCnt = 0;
 			Capture = 0;
 			TA_OverflowCnt = 0;

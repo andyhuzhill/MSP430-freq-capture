@@ -17,10 +17,7 @@
 #include <msp430g2553.h>
 #include "lcd12864.h"
 
-//#define DEBUG
-
 typedef unsigned int uint;
-//typedef unsigned char uchar;
 
 uint Capture = 0;
 uint CapCnt=0;

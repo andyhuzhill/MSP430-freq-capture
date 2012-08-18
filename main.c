@@ -26,18 +26,25 @@ unsigned long Period=0;
 
 void ConfigClocks(void)
 {
+	uint i;
 	BCSCTL1 = CALBC1_1MHZ;
 	DCOCTL = CALDCO_1MHZ;
 	BCSCTL3 |= LFXT1S_0;                  //ACLK = LFXT1 = 32768Hz
-	IFG1 &= ~OFIFG;
+	do {
+		IFG1 &= ~OFIFG; 				  //清除振荡器失效标志
+		for (i = 0xff;i>0;i--);
+	} while ((IFG1 & OFIFG)!=0);			//如果振荡器失效标志存在
+
 	BCSCTL2 |= SELM_0 + DIVM_0 + DIVS_0;  //MCLK =DCO SMCLK = DCO
 }
 
 void ConfigTimer(void)
 {
 	CCTL1 = CCIE + CM_3 + SCS + CAP;     //上升沿捕获、选择CCI1A (P1.2) 同步捕获
-	TACTL = TASSEL_1 + MC_2  + TAIE + TACLR + ID_0;
-	//基准频率32768Hz 连续计数 无分频、定时中断允许
+	TA0CTL = TASSEL_2 + MC_2 + TAIE + TACLR + ID_3;
+	//基准频率1MHz 连续计数 八 分频、定时中断允许
+	//	TA1CTL = TASSEL_1 + MC_2 + TAIE + TACLR + ID_0;
+	//	//基准频率32768Hz 连续计数  无分频  定时中断允许
 }
 
 void ConfigADC(void)
@@ -104,8 +111,8 @@ main(void)
 		_BIS_SR(LPM3_bits+GIE);
 
 		if (Period != 0) {
-			t = Period / 200.0 / 32768;
-			freq = 1.0 / t / 2;              //将周期转换为频率
+			t = Period / 200.0;
+			freq = 1000000.0 / t / 2;              //将周期转换为频率
 
 			str = ftoa(freq*10);
 			LCD12864_write_string(4,2,str);
@@ -142,7 +149,7 @@ main(void)
 
 #pragma vector=TIMER0_A1_VECTOR
 __interrupt void
-TimerA1_ISR(void)
+TimerA0_ISR(void)
 {
 	_DINT();
 	switch (TAIV)
@@ -153,7 +160,7 @@ TimerA1_ISR(void)
 		CapCnt ++;
 		if (CapCnt >= 200){
 			if (TA_OverflowCnt > 0){
-				Period = (65536 - Capture) + (TA_OverflowCnt-1) * 65536 + CCR1;  // 计算100个周期所用时间
+				Period = CCR1 + TA_OverflowCnt * 65536  - Capture ;  // 计算100个周期所用时间
 			}else{
 				Period = CCR1 - Capture ;
 			}
@@ -175,6 +182,13 @@ TimerA1_ISR(void)
 	}
 	_EINT();
 }
+
+//#pragma vector= TIMER1_A1_VECTOR
+//__interrupt void
+//TimerA1_ISR(void)
+//{
+//	ADC10CTL0 = ADC10SC | ENC;
+//}
 
 #pragma vector= ADC10_VECTOR
 __interrupt

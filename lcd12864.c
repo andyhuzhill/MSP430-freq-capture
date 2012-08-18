@@ -41,12 +41,12 @@ void LCD12864_write_byte(uint8_t byte)
 
 /*
  *
- *     LCD åˆå§‹åŒ–
+ *     ³õÊ¼»¯£Ì£Ã£Ä
+ *
  */
 void LCD12864_init(void)
 {
     delay_ms(5);
-    //    LCD_CS_DDR |= LCD_CS;
     LCD_SID_DDR |= LCD_SID;
     LCD_CLK_DDR |= LCD_CLK;
 
@@ -61,93 +61,37 @@ void LCD12864_init(void)
     delay_ms(5);
 }
 
-#if 0
 
 /*
  *
- * å¨‘å‰ï¿½æµ£èƒ¯ï¿½æ¶“ï¿½ï¿½å¨Œï¿½ *
- */
-
-void LCD12864_en_up(void)
-{
-    LCD_EN_PORT &= ~LCD_EN;
-    delay_us(10);
-    LCD_EN_PORT |= LCD_EN;
-}
-
-/*
+ * ¡¡¡¡¡¡¡¡Ð´Ö¸Áî
  *
- * å¨‘å‰ï¿½æµ£èƒ¯ï¿½æ¶“ï¿½ï¿½å¨Œï¿½ *
- */
-void LCD12864_en_down(void)
-{
-    LCD_EN_PORT |= LCD_EN;
-    delay_us(10);
-    LCD_EN_PORT &= ~LCD_EN;
-}
-#endif
-
-
-
-/*
- *
- *  ï¿½ï¿½ï¿½æµ ã‚…ï¿½ï¿½ï¿½ *
  */
 
 void LCD12864_write_command(uint8_t cmd)
 {
-#if 0
-    delay_us(16);
-    LCD_RS_PORT &= ~LCD_RS;  // RS=0
-    LCD_RW_PORT &= ~LCD_RW;  // RW=0
-    LCD12864_en_up();
-    LCD_DATA_PORT &= 0xf0;   //å¨“ï¿½ï¿½ï¿½ï¿½ï¿½
-    LCD_DATA_PORT |= (cmd >> 4) & 0x0f;  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-
-    delay_us(16);
-    LCD12864_en_down();
-    LCD12864_en_up();
-    LCD_DATA_PORT &= 0xf0;    //å¨“ï¿½ï¿½ï¿½ï¿½ï¿½
-    LCD_DATA_PORT |= cmd & 0x0f; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-    LCD12864_en_down();
-#endif
-    //    LCD_CS_PORT |= LCD_CS;
     LCD12864_write_byte(0xf8);
     LCD12864_write_byte(cmd & 0xf0);
     LCD12864_write_byte((cmd<<4)&0xf0);
-    //    LCD_CS_PORT &= ~LCD_CS;
 }
 
 /*
  *
- * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ *
+ * ¡¡¡¡Ð´Êý¾Ý
+ *
  */
 
 void LCD12864_write_data(uint8_t dat)
 {
-#if 0
-    delay_us(16);
-    LCD_RS_PORT |= LCD_RS;  // RS=1
-    LCD_RW_PORT &= ~LCD_RW;
-    LCD12864_en_up();       // Eæ¶“ï¿½ï¿½å¨Œï¿½    LCD_DATA_PORT &= 0xf0;
-    LCD_DATA_PORT |= (dat >> 4) & 0x0f;
-    delay_us(16);
-    LCD12864_en_down();
-    LCD12864_en_up();
-    LCD_DATA_PORT &= 0xf0;
-    LCD_DATA_PORT |= dat & 0x0f;
-    LCD12864_en_down();
-#endif
-    //    LCD_CS_PORT |= LCD_CS;
     LCD12864_write_byte(0xfa);
     LCD12864_write_byte(dat & 0xf0);
     LCD12864_write_byte((dat<<4)&0xf0);
-    //    LCD_CS_PORT &= ~LCD_CS;
 }
 
 /*
-
- * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ *
+ *
+ *  ¹â±êÒÆÖÁÖ¸¶¨Î»ÖÃ
+ *
  */
 
 void LCD12864_goToXY(uint8_t Xpos, uint8_t Ypos)
@@ -176,7 +120,7 @@ void LCD12864_goToXY(uint8_t Xpos, uint8_t Ypos)
 
 /*
  *
- *  åœ¨æŒ‡å®šä½ç½®å¼€å§‹å†™ä¸€ä¸ªå­—ç¬¦ä¸²
+ *	Ð´ÈëÒ»¸ö×Ö·û´®
  *
  */
 
@@ -191,7 +135,7 @@ void LCD12864_write_string(uint8_t Xpos, uint8_t Ypos,const char *str)
 
 /*
  *
- *  åœ¨æŒ‡å®šä½ç½®å†™å…¥ä¸€ä¸ªå­—ç¬¦
+ *  Ð´ÈëÒ»¸ö×Ö·û
  *
  */
 
@@ -203,7 +147,7 @@ void LCD12864_write_char(uint8_t Xpos, uint8_t Ypos, uint8_t dat)
 
 /*
  *
- * LCD æ¸…å±
+ * LCD ÇåÆÁ
  *
  */
 

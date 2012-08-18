@@ -27,8 +27,8 @@ unsigned long Period=0;
 void ConfigClocks(void)
 {
 	uint i;
-	BCSCTL1 = CALBC1_1MHZ;
-	DCOCTL = CALDCO_1MHZ;
+	BCSCTL1 = CALBC1_8MHZ;
+	DCOCTL = CALDCO_8MHZ;
 	BCSCTL3 |= LFXT1S_0;                  //ACLK = LFXT1 = 32768Hz
 	do {
 		IFG1 &= ~OFIFG; 				  //清除振荡器失效标志
@@ -42,15 +42,15 @@ void ConfigTimer(void)
 {
 	CCTL1 = CCIE + CM_3 + SCS + CAP;     //上升沿捕获、选择CCI1A (P1.2) 同步捕获
 	TA0CTL = TASSEL_2 + MC_2 + TAIE + TACLR + ID_3;
-	//基准频率1MHz 连续计数 八 分频、定时中断允许
-	//	TA1CTL = TASSEL_1 + MC_2 + TAIE + TACLR + ID_0;
+	//基准频率8MHz 连续计数 八 分频、定时中断允许
+	//	TACTL = TASSEL_1 + MC_2 + TAIE + TACLR + ID_0;
 	//	//基准频率32768Hz 连续计数  无分频  定时中断允许
 }
 
 void ConfigADC(void)
 {
-	ADC10CTL0 = SREF_1 + ADC10SHT_2 + REFON + ADC10ON + ADC10IE + REF2_5V;
-	//转换时钟选择 ADC10ON 参考电压2.5V
+	ADC10CTL0 = SREF_1 + ADC10SHT_2 + REFON + ADC10ON + ADC10IE ;
+	//转换时钟选择 ADC10ON 参考电压1.5V
 	ADC10CTL1 |= INCH_4;
 	ADC10AE0  |= BIT4;
 }
@@ -66,17 +66,18 @@ void ConfigPort(void)
 
 char* ftoa(float f)  //浮点数转换为字符串
 {
-	static char str[7];
-	long iTemp;
+	static char str[8]={0};
+	long iDat;
 
-	iTemp = (long)f;
-	str[0]= iTemp / 10000 + 0x30;
-	str[1]= iTemp / 1000 % 10 + 0x30;
-	str[2]= iTemp / 100 % 10 + 0x30;
-	str[3]= iTemp / 10 % 10 + 0x30;
-	str[4]= '.';
-	str[5]= iTemp % 10 +0x30;
-	str[6]= '\0';
+	iDat = (long)f;
+	str[0]=iDat / 100000 + 0x30;
+	str[1]=iDat / 10000 % 10 + 0x30;
+	str[2]=iDat / 1000 % 10 + 0x30;
+	str[3]=iDat / 100 % 10 + 0x30;
+	str[4]=iDat /10 % 10 + 0x30;
+	str[5]= '.';
+	str[6]=iDat % 10 +0x30;
+	str[7]= '\0';
 	return str;
 }
 
@@ -103,19 +104,19 @@ main(void)
 	LCD12864_init();
 	LCD12864_clr();
 	LCD12864_write_string(0,1,"    频  率  计");
-	LCD12864_write_string(0,2,"频率值:");
+	LCD12864_write_string(0,2,"频率:");
 	LCD12864_write_string(0,3,"幅值:");
 	while(1)
 	{
 		ADC10CTL0 |= ADC10SC + ENC;
-		_BIS_SR(LPM3_bits+GIE);
+		_BIS_SR(CPUOFF+GIE);
 
 		if (Period != 0) {
 			t = Period / 200.0;
 			freq = 1000000.0 / t / 2;              //将周期转换为频率
-
+			freq = freq / 1.01;
 			str = ftoa(freq*10);
-			LCD12864_write_string(4,2,str);
+			LCD12864_write_string(3,2,str);
 			LCD12864_write_data('H');
 			LCD12864_write_data('z');
 			Period = 0;
@@ -138,7 +139,7 @@ main(void)
 					temp += ADC_max[j];
 				average = (temp / 10);
 				k = 0;
-				volt =  average / 1023.0 * 2.5;
+				volt =  average / 1023.0 * 1.5;
 				str = ftoa(volt*10);
 				LCD12864_write_string(4,3,str); // 计算十个最大值的平均值作为幅值，并显示
 				LCD12864_write_data('V');
@@ -155,7 +156,7 @@ TimerA0_ISR(void)
 	switch (TAIV)
 	{
 	case 2:
-		if ((CapCnt ==0)&&(CCTL1 &CM0))  //当上升沿时 开始计时
+		if ((CapCnt ==0)&&(CCTL1&CM0))  //当上升沿时 开始计时
 			Capture = CCR1;
 		CapCnt ++;
 		if (CapCnt >= 200){
@@ -169,7 +170,7 @@ TimerA0_ISR(void)
 			TA_OverflowCnt = 0;
 		}
 		TACCTL0 &= ~CCIFG;
-		_BIC_SR_IRQ(LPM3_bits);
+		_BIC_SR_IRQ(CPUOFF);
 		break;
 	case 10:
 		if (Capture != 0) {
@@ -194,5 +195,5 @@ TimerA0_ISR(void)
 __interrupt
 void Adc10_ISR(void)
 {
-	_BIC_SR_IRQ(LPM3_bits);
+	_BIC_SR_IRQ(CPUOFF);
 }

@@ -53,11 +53,11 @@ void LCD12864_init(void)
     delay_ms(5);
     LCD12864_write_command(0x30);
     delay_ms(5);
-    LCD12864_write_command(0x28);
+    LCD12864_write_command(0x28);  //设定CGRAM地址
     delay_ms(30);
-    LCD12864_write_command(0x01);
-    LCD12864_write_command(0x0c);
-    LCD12864_write_command(0x06);
+    LCD12864_write_command(0x01);  //清除显示
+    LCD12864_write_command(0x0c);  //设定光标移动方向
+    LCD12864_write_command(0x06);  //开显示 关游标
     delay_ms(5);
 }
 

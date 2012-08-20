@@ -134,7 +134,6 @@ main(void)
 	i=j=k=0;
 
 	LCD12864_init();
-	LCD12864_clr();
 	LCD12864_write_string(0,1,"    频  率  计");
 	LCD12864_write_string(0,2,"频率:");
 	LCD12864_write_string(0,3,"幅值:");

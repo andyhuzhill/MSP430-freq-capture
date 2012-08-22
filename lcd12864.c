@@ -38,7 +38,6 @@ void LCD12864_write_byte(uint8_t byte)
     }
 }
 
-
 /*
  *
  *     ³õÊ¼»¯£Ì£Ã£Ä

@@ -93,23 +93,18 @@
  *
  *
  */
-//#define LCD_CS_PORT P2OUT
-//#define LCD_CS_DDR P2DIR
 #define LCD_SID_PORT P2OUT
 #define LCD_SID_DDR P2DIR
 #define LCD_CLK_PORT P2OUT
 #define LCD_CLK_DDR P2DIR
 
-//#define LCD_CS BIT0
+
 #define LCD_SID BIT5
 #define LCD_CLK BIT4
 
-
-
-
 void LCD12864_init(void);
-
 void LCD12864_clr(void);
+
 #if 0
 void LCD12864_en_up(void);
 void LCD12864_en_down(void);
@@ -120,6 +115,5 @@ void LCD12864_write_data(uint8_t dat);
 void LCD12864_write_string(uint8_t Xpos,uint8_t Ypos,const char *str);
 void LCD12864_write_char(uint8_t Xpos,uint8_t Ypos, uint8_t chr);
 void LCD12864_goToXY(uint8_t Xpos,uint8_t Ypos);
-
 
 #endif /* LCD12864_H_ */

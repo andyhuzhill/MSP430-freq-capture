@@ -121,9 +121,7 @@ void
 main(void)
 {
 	char *str;
-
 	float t,freq;
-
 
 	WDTCTL = WDTPW + WDTHOLD;
 	ConfigClocks();
@@ -144,8 +142,8 @@ main(void)
 
 		ADC_fuzhi();
 		if (Period != 0) {
-			t = Period / 200.0;
-			freq = 1000000.0 / t / 2;              //将周期转换为频率
+			t = Period / 100.0;
+			freq = 1000000.0 / t;              //将周期转换为频率
 			freq = freq / 1.005;
 			str = ftoa(freq*10);
 			LCD12864_write_string(3,2,str);
